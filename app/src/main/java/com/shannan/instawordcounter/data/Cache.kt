@@ -6,7 +6,7 @@ class Cache {
 
     private val wordsCacheFileName = "wordsCache.txt"
 
-    fun write(cacheDir: File, wordsMap: Map<String, String>?) {
+    fun write(cacheDir: File, wordsMap: Map<String, Int>?) {
 
         val cacheFile = File(cacheDir, wordsCacheFileName)
         if (!cacheFile.exists()) {
@@ -22,17 +22,17 @@ class Cache {
         s.close()
     }
 
-    fun read(cacheDir: File): Map<String, String> {
+    fun read(cacheDir: File): Map<String, Int> {
         val cacheFile = File(cacheDir, wordsCacheFileName)
-        var fileObj2: MutableMap<String, String> = HashMap()
+        var wordsMap: MutableMap<String, Int> = HashMap()
 
         if (cacheFile.exists()) {
             val f1 = FileInputStream(cacheFile)
             val s1 = ObjectInputStream(f1)
-            fileObj2 =
-                s1.readObject() as HashMap<String, String>
+            wordsMap =
+                s1.readObject() as HashMap<String, Int>
             s1.close()
         }
-        return fileObj2
+        return wordsMap
     }
 }
