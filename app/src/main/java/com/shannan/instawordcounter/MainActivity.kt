@@ -2,6 +2,7 @@ package com.shannan.instawordcounter
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import com.shannan.instawordcounter.data.Cache
 import com.shannan.instawordcounter.data.GetContentOperation
 import com.shannan.instawordcounter.data.TaskExecutor
 
@@ -36,10 +37,15 @@ class MainActivity : AppCompatActivity() {
                     // remove special characters
                     .replace("[^A-Za-z0-9 ]".toRegex(), "")
 
-                for ((k, v) in counter.countWords(body)) {
-                    println("$k = $v")
+                Cache().write(cacheDir, counter.countWords(body))
+                val wordsFromCache: Map<String, String> = Cache().read(cacheDir)
+                if (wordsFromCache.isNotEmpty()) {
+                    for ((k, v) in wordsFromCache) {
+                        println("$k = $v")
+                    }
                 }
             }
         )
     }
+
 }
