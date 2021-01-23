@@ -1,72 +1,81 @@
 package com.shannan.instawordcounter.ui.wordslist
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkInfo
 import android.os.Bundle
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.shannan.instawordcounter.R
-import com.shannan.instawordcounter.data.Cache
-import com.shannan.instawordcounter.data.GetContentOperation
-import com.shannan.instawordcounter.data.TaskExecutor
+import com.shannan.instawordcounter.di.DependencyInjectorImpl
+
 
 class WordsActivity : AppCompatActivity(), WordsListContract.View {
 
-    private lateinit var linearLayoutManager: LinearLayoutManager
     private lateinit var recyclerView: RecyclerView
+    private lateinit var linearLayoutManager: LinearLayoutManager
     private lateinit var adapter: RecyclerAdapter
+    private lateinit var progressView: View
+    private lateinit var errorView: ViewGroup
+    private lateinit var errorActionButton: TextView
+    private lateinit var presenter: WordsListContract.Presenter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        initViews()
+        presenter = WordsPresenter(this, cacheDir, DependencyInjectorImpl())
+        presenter.getWordsList()
+    }
+
+    private fun initViews() {
         recyclerView = findViewById(R.id.recyclerView)
         linearLayoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
         recyclerView.layoutManager = linearLayoutManager
-
-        readIt()
+        progressView = findViewById(R.id.layout_progress_bar)
+        errorView = findViewById(R.id.layout_error_view)
+        errorActionButton = findViewById(R.id.layout_error_action)
     }
 
-    private fun readIt() {
+    override fun onWordsFetched(words: Array<Pair<String, Int>>) {
+        progressView.visibility = View.GONE
+        errorView.visibility = View.GONE
+        recyclerView.visibility = View.VISIBLE
 
-        TaskExecutor().executeProgressTask(
-            GetContentOperation(),
-            onProgress = { progress ->
-                println("progress: $progress")
-            },
-            onComplete = { result ->
-
-                val body = result
-                    // get only the page body
-                    .substringAfter("<body>")
-                    .substringBefore("</body>")
-                    // remove style tags
-                    .replace("<style([\\s\\S]+?)</style>".toRegex(), " ")
-                    // remove html tags
-                    .replace("<(.|\\n)*?>".toRegex(), " ")
-                    // remove special characters
-                    .replace("[^A-Za-z0-9 ]".toRegex(), "")
-
-                Cache().write(cacheDir, WordCounter().countWords(body))
-                val wordsFromCache: Map<String, Int> = Cache().read(cacheDir)
-                val wordsArray: Array<Pair<String, Int>> = wordsFromCache.toList().toTypedArray()
-
-                if (wordsArray.isNotEmpty()) {
-                    adapter = RecyclerAdapter(wordsArray)
-                    recyclerView.adapter = adapter
-                }
-            }
-        )
+        adapter = RecyclerAdapter(words)
+        recyclerView.adapter = adapter
     }
 
-    override fun onWordsFetched(words: Map<String, Any>) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onFailedResponse(message: String) {
-        TODO("Not yet implemented")
+    override fun onError() {
+        progressView.visibility = View.GONE
+        recyclerView.visibility = View.GONE
+        errorView.visibility = View.VISIBLE
+        errorActionButton.setOnClickListener { presenter.getWordsList() }
     }
 
     override fun setLoading(isLoading: Boolean) {
-        TODO("Not yet implemented")
+        errorView.visibility = View.GONE
+        if (isLoading) {
+            progressView.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+        } else {
+            progressView.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
+        }
     }
 
+    override fun checkConnectivity(): Boolean {
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val activeNetwork: NetworkInfo? = cm.activeNetworkInfo
+        return activeNetwork?.isConnectedOrConnecting == true
+    }
+
+    override fun onDestroy() {
+        presenter.onDestroy()
+        super.onDestroy()
+    }
 }

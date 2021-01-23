@@ -4,7 +4,7 @@ class GetContentOperation : ProgressTask<Boolean, String>() {
 
     private val url = "https://instabug.com"
 
-    override fun runTask(progressToken: OnTaskProgressUpdate<Boolean>): String {
+    override fun runTask(progressToken: OnTaskProgressUpdate<Boolean>): String? {
         progressToken(true)
         val networkCall = NetworkCall()
         val response = networkCall.makeNetworkCall(url)

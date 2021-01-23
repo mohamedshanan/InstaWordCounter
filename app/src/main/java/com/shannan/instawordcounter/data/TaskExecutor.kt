@@ -6,7 +6,7 @@ import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 
 abstract class ProgressTask<P, R> {
-    abstract fun runTask(progressToken: OnTaskProgressUpdate<P>): R
+    abstract fun runTask(progressToken: OnTaskProgressUpdate<P>): R?
 }
 
 typealias Task<R> = Callable<R>
@@ -31,7 +31,7 @@ class TaskExecutor {
     fun <P, R> executeProgressTask(
         progressTask: ProgressTask<P, R>,
         onProgress: OnTaskProgressUpdate<P>,
-        onComplete: OnTaskComplete<R>
+        onComplete: OnTaskComplete<R?>
     ) {
         executor.execute {
             val result = progressTask.runTask(progressToken = { progress ->

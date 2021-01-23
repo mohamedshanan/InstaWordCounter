@@ -1,13 +1,16 @@
 package com.shannan.instawordcounter.ui.wordslist
 
 interface WordsListContract {
-    interface Presenter {
-        val wordsList: Unit
-    }
 
     interface View {
-        fun onWordsFetched(words: Map<String, Any>)
-        fun onFailedResponse(message: String)
+        fun onWordsFetched(words: Array<Pair<String, Int>>)
+        fun onError()
         fun setLoading(isLoading: Boolean)
+        fun checkConnectivity(): Boolean
+    }
+
+    interface Presenter {
+        fun getWordsList()
+        fun onDestroy()
     }
 }
