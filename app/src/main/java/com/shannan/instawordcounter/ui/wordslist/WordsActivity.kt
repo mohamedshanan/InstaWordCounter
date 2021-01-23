@@ -2,7 +2,8 @@ package com.shannan.instawordcounter.ui.wordslist
 
 import android.content.Context
 import android.net.ConnectivityManager
-import android.net.NetworkInfo
+import android.net.NetworkCapabilities
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
@@ -69,9 +70,42 @@ class WordsActivity : AppCompatActivity(), WordsListContract.View {
     }
 
     override fun checkConnectivity(): Boolean {
-        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val activeNetwork: NetworkInfo? = cm.activeNetworkInfo
-        return activeNetwork?.isConnectedOrConnecting == true
+        var result = false
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager?
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            cm?.run {
+                cm.getNetworkCapabilities(cm.activeNetwork)?.run {
+                    when {
+                        hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> {
+                            result = true
+                        }
+                        hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> {
+                            result = true
+                        }
+                        hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> {
+                            result = true
+                        }
+                    }
+                }
+            }
+        } else {
+            cm?.run {
+                cm.activeNetworkInfo?.run {
+                    when (type) {
+                        ConnectivityManager.TYPE_WIFI -> {
+                            result = true
+                        }
+                        ConnectivityManager.TYPE_MOBILE -> {
+                            result = true
+                        }
+                        ConnectivityManager.TYPE_VPN -> {
+                            result = true
+                        }
+                    }
+                }
+            }
+        }
+        return result
     }
 
     override fun onDestroy() {
