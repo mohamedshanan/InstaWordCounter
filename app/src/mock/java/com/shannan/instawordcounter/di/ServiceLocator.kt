@@ -23,22 +23,18 @@ import com.shannan.instawordcounter.data.WordsDataSource
 import com.shannan.instawordcounter.data.WordsRepository
 import com.shannan.instawordcounter.data.local.FileCache
 import com.shannan.instawordcounter.data.local.WordsLocalDataSource
-import com.shannan.instawordcounter.data.remote.GetContentOperation
-import com.shannan.instawordcounter.data.remote.TaskExecutor
+import com.shannan.instawordcounter.data.remote.FakeWordsRemoteDataSource
 import com.shannan.instawordcounter.data.remote.WordsRemoteDataSource
 
 /**
- * A Service Locator for the [WordsRepository]. This is the mock version, with a
- * the [FakeWordsRemoteDataSource].
+ * A Service Locator for the [WordsRepository]. This is the prod version, with a
+ * the "real" [WordsRemoteDataSource].
  */
 object ServiceLocator {
 
-    private var fileCache: FileCache? = null
-    private var tasExecutor: TaskExecutor? = null
-    private var getContentOperation: GetContentOperation? = null
-
     @Volatile
     var wordsRepository: WordsRepository? = null
+    var fileCache: FileCache? = null
         @VisibleForTesting set
 
     fun provideWordsRepository(context: Context): WordsRepository {
@@ -48,14 +44,8 @@ object ServiceLocator {
     }
 
     private fun createWordsRepository(context: Context): WordsRepository {
-        val taskExecutor = tasExecutor ?: TaskExecutor()
-        val getContentOperation = getContentOperation ?: GetContentOperation()
-        val newRepo = DefaultWordsRepository(
-            WordsRemoteDataSource(
-                taskExecutor,
-                getContentOperation
-            ), createWordsLocalDataSource(context)
-        )
+        val newRepo =
+            DefaultWordsRepository(FakeWordsRemoteDataSource, createWordsLocalDataSource(context))
         wordsRepository = newRepo
         return newRepo
     }
