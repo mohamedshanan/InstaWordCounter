@@ -1,4 +1,4 @@
-package com.shannan.instawordcounter.data
+package com.shannan.instawordcounter.data.remote
 
 class GetContentOperation : ProgressTask<Boolean, String>() {
 

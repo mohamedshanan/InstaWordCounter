@@ -1,12 +1,13 @@
-package com.shannan.instawordcounter.data
+package com.shannan.instawordcounter.data.local
 
 import java.io.*
 
-class Cache {
+class FileCache(private val cacheDir: File) {
 
     private val wordsCacheFileName = "wordsCache.txt"
 
-    fun write(cacheDir: File, wordsMap: Map<String, Int>?) {
+    @Throws(Exception::class)
+    fun write(wordsMap: String?) {
 
         val cacheFile = File(cacheDir, wordsCacheFileName)
         if (!cacheFile.exists()) {
@@ -22,17 +23,18 @@ class Cache {
         s.close()
     }
 
-    fun read(cacheDir: File): Map<String, Int> {
+    @Throws(Exception::class)
+    fun read(): String {
         val cacheFile = File(cacheDir, wordsCacheFileName)
-        var wordsMap: MutableMap<String, Int> = HashMap()
+        var content = ""
 
         if (cacheFile.exists()) {
             val f1 = FileInputStream(cacheFile)
             val s1 = ObjectInputStream(f1)
-            wordsMap =
-                s1.readObject() as HashMap<String, Int>
+            content =
+                s1.readObject() as String
             s1.close()
         }
-        return wordsMap
+        return content
     }
 }

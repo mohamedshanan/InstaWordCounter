@@ -1,6 +1,5 @@
-package com.shannan.instawordcounter.data
+package com.shannan.instawordcounter.data.remote
 
-import android.util.Log
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStream
@@ -19,7 +18,6 @@ class NetworkCall {
             connection.connect()
             inputStream = connection.inputStream
             response = readIt(inputStream)
-            Log.d("response", response)
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {

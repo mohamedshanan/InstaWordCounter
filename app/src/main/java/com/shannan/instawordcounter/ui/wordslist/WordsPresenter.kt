@@ -1,21 +1,15 @@
 package com.shannan.instawordcounter.ui.wordslist
 
-import com.shannan.instawordcounter.data.Cache
-import com.shannan.instawordcounter.data.GetContentOperation
-import com.shannan.instawordcounter.data.TaskExecutor
-import com.shannan.instawordcounter.di.DependencyInjector
-import java.io.File
+
+import com.shannan.instawordcounter.data.CallBack
+import com.shannan.instawordcounter.data.WordsRepository
 
 class WordsPresenter(
     view: WordsListContract.View,
-    private var cacheDir: File,
-    dependencyInjector: DependencyInjector
+    private val wordsRepository: WordsRepository
 ) : WordsListContract.Presenter {
 
-    private val cache: Cache = dependencyInjector.cache()
-    private val getContentOperation: GetContentOperation = dependencyInjector.getContentOperation()
-    private val taskExecutor: TaskExecutor = dependencyInjector.taskExecutor()
-    private val wordCounter: WordCounter = dependencyInjector.wordCounter()
+    private val wordCounter: WordCounter = WordCounter()
 
     private var view: WordsListContract.View? = view
 
@@ -24,46 +18,36 @@ class WordsPresenter(
     }
 
     override fun getWordsList() {
-        if (view?.checkConnectivity()!!) {
-            loadWordsList()
-        } else {
-            val wordsFromCache: Map<String, Int> = cache.read(cacheDir)
-            if (wordsFromCache.isNotEmpty()) {
-                val wordsArray: Array<Pair<String, Int>> =
-                    wordsFromCache.toList().toTypedArray()
-                view?.onWordsFetched(wordsArray)
-            } else {
-                view?.onError()
-            }
-        }
-    }
+        view?.setLoading(true)
+        view?.checkConnectivity()?.let {
+            wordsRepository.getWords(it, object : CallBack {
+                override fun onSuccess(response: String?) {
+                    view?.setLoading(false)
+                    if (response.isNullOrEmpty()) {
+                        view?.onError()
+                    }
+                    val body = response
+                        // get only the page body
+                        ?.substringAfter("<body>")
+                        ?.substringBefore("</body>")
+                        // remove style tags
+                        ?.replace("<style([\\s\\S]+?)</style>".toRegex(), " ")
+                        // remove html tags
+                        ?.replace("<(.|\\n)*?>".toRegex(), " ")
+                        // remove special characters
+                        ?.replace("[^A-Za-z0-9 ]".toRegex(), "")
 
-    private fun loadWordsList() {
-        taskExecutor.executeProgressTask(
-            getContentOperation,
-            onProgress = { progress ->
-                view?.setLoading(progress)
-            },
-            onComplete = { result ->
-                if (result.isNullOrEmpty()) {
+                    val wordsArray: Array<Pair<String, Int>> =
+                        wordCounter.countWords(body).toList().toTypedArray()
+                    view?.onWordsFetched(wordsArray)
+                }
+
+                override fun onError() {
+                    view?.setLoading(false)
                     view?.onError()
                 }
-                val body = result
-                    // get only the page body
-                    ?.substringAfter("<body>")
-                    ?.substringBefore("</body>")
-                    // remove style tags
-                    ?.replace("<style([\\s\\S]+?)</style>".toRegex(), " ")
-                    // remove html tags
-                    ?.replace("<(.|\\n)*?>".toRegex(), " ")
-                    // remove special characters
-                    ?.replace("[^A-Za-z0-9 ]".toRegex(), "")
 
-                cache.write(cacheDir, wordCounter.countWords(body))
-                val wordsFromCache: Map<String, Int> = cache.read(cacheDir)
-                val wordsArray: Array<Pair<String, Int>> = wordsFromCache.toList().toTypedArray()
-                view?.onWordsFetched(wordsArray)
-            }
-        )
+            })
+        }
     }
 }

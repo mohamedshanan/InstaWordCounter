@@ -11,8 +11,8 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.shannan.instawordcounter.InstaWordsApplication
 import com.shannan.instawordcounter.R
-import com.shannan.instawordcounter.di.DependencyInjectorImpl
 
 
 class WordsActivity : AppCompatActivity(), WordsListContract.View {
@@ -29,7 +29,8 @@ class WordsActivity : AppCompatActivity(), WordsListContract.View {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         initViews()
-        presenter = WordsPresenter(this, cacheDir, DependencyInjectorImpl())
+        val repository = (applicationContext as InstaWordsApplication).wordsRepository
+        presenter = WordsPresenter(this, repository)
         presenter.getWordsList()
     }
 
